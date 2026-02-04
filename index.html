@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A special Valentine's Day experience crafted with love">
+    <title>Will You Be My Valentine?</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♥</text></svg>">
+
+    <!-- Elegant Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Three.js Main Canvas -->
+    <canvas id="scene-canvas"></canvas>
+
+    <!-- Mouse Trail Canvas -->
+    <canvas id="trail-canvas"></canvas>
+
+    <!-- Cinematic Overlays -->
+    <div class="cinematic-vignette"></div>
+    <div class="cinematic-grain"></div>
+    <div class="letterbox letterbox--top"></div>
+    <div class="letterbox letterbox--bottom"></div>
+
+    <!-- Intro Overlay -->
+    <div id="introOverlay" class="intro-overlay">
+        <div class="intro-content">
+            <h1 class="intro-title">A Love Story...</h1>
+            <p class="intro-subtitle">Click to Enter</p>
+        </div>
+    </div>
+
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <!-- Placeholder - User should replace this or it will be silent -->
+        <source
+            src="https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=romantic-piano-124987.mp3"
+            type="audio/mpeg">
+    </audio>
+
+    <!-- Question Page -->
+    <main class="page page--question page--hidden" id="questionPage">
+        <article class="glass-card" id="glassCard">
+            <h1 class="card-title">My Dearest...</h1>
+            <p class="card-subtitle">There's something I've been meaning to ask you</p>
+            <div class="card-divider"><span>—</span></div>
+            <h2 class="card-question">Will you be my Valentine?</h2>
+
+            <div class="button-group" id="buttonGroup">
+                <button class="btn btn--yes" id="yesBtn">Yes, I Will</button>
+                <button class="btn btn--no" id="noBtn">Perhaps Not</button>
+            </div>
+
+            <p class="attempt-counter" id="attemptCounter"></p>
+            <div class="message-box" id="messageBox"></div>
+        </article>
+    </main>
+
+    <!-- Success Page -->
+    <main class="page page--success page--hidden" id="successPage">
+        <article class="success-content" id="successContent">
+            <h1 class="success-title">You've Made Me<br>the Happiest</h1>
+
+            <div class="love-meter">
+                <span class="love-meter__label">Our Love</span>
+                <div class="love-meter__track">
+                    <div class="love-meter__fill" id="loveFill"></div>
+                </div>
+                <span class="love-meter__value" id="loveValue">0%</span>
+            </div>
+
+            <p class="success-subtitle">This moment means everything to me</p>
+
+            <blockquote class="poem-card">
+                <p>
+                    "In a universe of infinite stars,<br>
+                    I found my way to where you are.<br>
+                    Through time and space, my heart knew true—<br>
+                    Every path was leading me to you."
+                </p>
+            </blockquote>
+
+            <div class="heart-equation">
+                <span class="eq-text">You</span>
+                <span class="eq-symbol">&</span>
+                <span class="eq-text">Me</span>
+                <span class="eq-symbol">=</span>
+                <span class="eq-result">Forever</span>
+            </div>
+
+            <p class="final-note">Together, always.</p>
+        </article>
+    </main>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Post-Processing -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
