@@ -809,3 +809,222 @@ body {
         font-size: 36px;
     }
 }
+
+/* ========================================
+   PERSONALIZATION UI
+   ======================================== */
+
+/* Personalize Button */
+.btn-personalize {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 30px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.btn-personalize:hover {
+    background: rgba(255, 107, 157, 0.2);
+    border-color: rgba(255, 107, 157, 0.4);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-personalize span {
+    pointer-events: none;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.4s ease;
+}
+
+.modal--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+}
+
+.modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 480px;
+    padding: 40px;
+    background: rgba(20, 10, 20, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    text-align: center;
+    transform: scale(1);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal--hidden .modal-content {
+    transform: scale(0.95);
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.modal-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    margin-bottom: 8px;
+    color: #fff;
+    text-shadow: 0 0 20px rgba(255, 107, 157, 0.4);
+}
+
+.modal-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 32px;
+    font-size: 1rem;
+}
+
+/* Input Group */
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#nameInput {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 16px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1.2rem;
+    text-align: center;
+    font-family: var(--font-body);
+    outline: none;
+    transition: all 0.3s;
+}
+
+#nameInput:focus {
+    border-color: #ff6b9d;
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255, 107, 157, 0.2);
+}
+
+#createLinkBtn {
+    background: linear-gradient(135deg, #ff6b9d, #c44569);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.5px;
+}
+
+#createLinkBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 107, 157, 0.4);
+}
+
+/* Share Result */
+.share-result {
+    margin-top: 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 24px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.4s ease;
+}
+
+.share-result.is-hidden {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    display: none;
+}
+
+.share-result p {
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+}
+
+.link-box {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#shareLinkInput {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 12px;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    font-family: monospace;
+}
+
+#copyLinkBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 0 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+#copyLinkBtn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.share-tip {
+    font-size: 0.9rem !important;
+    color: var(--pink-200) !important;
+    font-style: italic;
+    opacity: 0.8;
+}

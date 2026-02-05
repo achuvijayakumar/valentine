@@ -61,19 +61,20 @@
     scene.add(roseLight);
 
     // ========================================
-    // STARFIELD (~3000 STARS)
+    // STARFIELD (~6000 STARS)
     // ========================================
     const starsGeometry = new THREE.BufferGeometry();
-    const STAR_COUNT = 3000;
+    const STAR_COUNT = 6000;
     const starPositions = new Float32Array(STAR_COUNT * 3);
     const starColors = new Float32Array(STAR_COUNT * 3);
     const starSizes = new Float32Array(STAR_COUNT);
 
     for (let i = 0; i < STAR_COUNT; i++) {
         const i3 = i * 3;
-        starPositions[i3] = (Math.random() - 0.5) * 400;
-        starPositions[i3 + 1] = (Math.random() - 0.5) * 400;
-        starPositions[i3 + 2] = -50 - Math.random() * 250;
+        // Expanded spread to cover wide screens at depth
+        starPositions[i3] = (Math.random() - 0.5) * 1200;
+        starPositions[i3 + 1] = (Math.random() - 0.5) * 1200;
+        starPositions[i3 + 2] = -5 - Math.random() * 350; // Closer range to deeper range
 
         // Mostly white, some pink/purple tinted
         const isPink = Math.random() > 0.85;
@@ -175,6 +176,106 @@
 
     // Mouse position for swarm interaction
     let mouseWorldX = 0, mouseWorldY = 0;
+
+    // ========================================
+    // PERSONALIZATION (TEXT MORPH)
+    // ========================================
+    const textTargets = new Float32Array(SWARM_COUNT * 3);
+
+    // GSAP Controlled Object
+    const morphParams = { factor: 0 }; // 0 = Heart, 1 = Text
+    let morphTimeline = null;
+    let isPersonalized = false;
+
+    // Initialize text targets to be same as heart initially
+    for (let i = 0; i < SWARM_COUNT * 3; i++) {
+        textTargets[i] = heartTargets[i];
+    }
+
+    function startMorphLoop() {
+        if (morphTimeline) morphTimeline.kill();
+
+        // Loop: Heart -> Text -> Heart
+        morphTimeline = gsap.timeline({ repeat: -1, yoyo: true, repeatDelay: 2 });
+
+        // Start from Heart (0), animate to Text (1) over 3 seconds
+        // Hold Text for 2 seconds (repeatDelay), then yoyo back
+        morphTimeline.to(morphParams, {
+            factor: 1,
+            duration: 3.5,
+            ease: "power2.inOut",
+            delay: 1 // Initial delay before first morph
+        });
+    }
+
+    function createTextTargets(text) {
+        const fontSize = 160;
+        const fontName = 'Playfair Display, Georgia, serif';
+
+        // Create offscreen canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1200; // Increased width for longer names
+        canvas.height = 300;
+
+        ctx.font = `bold ${fontSize}px ${fontName}`;
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        const pixels = [];
+
+        // Dynamic scaling based on text length to fit screen
+        // Base scale 0.15 is good for short names (~5 chars)
+        // For longer names, we reduce scale
+        let scaleModifier = 0.15;
+        if (text.length > 5) {
+            scaleModifier = 0.12;
+        }
+        if (text.length > 8) {
+            scaleModifier = 0.09;
+        }
+        if (text.length > 12) {
+            scaleModifier = 0.07;
+        }
+
+        // Scan for pixels
+        // Adjust step size based on scale to keep particle density reasonable
+        const step = Math.max(1, Math.floor(2 * (0.15 / scaleModifier)));
+
+        for (let y = 0; y < canvas.height; y += step) {
+            for (let x = 0; x < canvas.width; x += step) {
+                const alpha = imageData[(y * canvas.width + x) * 4 + 3];
+                if (alpha > 128) {
+                    pixels.push({
+                        x: (x - canvas.width / 2) * scaleModifier,
+                        y: -(y - canvas.height / 2) * scaleModifier + 5,
+                        z: 0
+                    });
+                }
+            }
+        }
+
+        // Map pixels to particles
+        for (let i = 0; i < SWARM_COUNT; i++) {
+            const i3 = i * 3;
+
+            if (pixels.length > 0) {
+                const pixelIndex = i % pixels.length;
+                const pixel = pixels[pixelIndex];
+
+                const depth = (Math.random() - 0.5) * 2;
+
+                textTargets[i3] = pixel.x + (Math.random() - 0.5) * 0.5;
+                textTargets[i3 + 1] = pixel.y + (Math.random() - 0.5) * 0.5;
+                textTargets[i3 + 2] = pixel.z + depth;
+            } else {
+                textTargets[i3] = heartTargets[i3];
+            }
+        }
+    }
 
     // ========================================
     // GLASS HEARTS (FOREGROUND, ~20)
@@ -336,6 +437,9 @@
         requestAnimationFrame(animate);
         const t = clock.getElapsedTime();
 
+        // Use GSAP controlled factor
+        const morphFactor = morphParams.factor;
+
         // Starfield slow rotation
         stars.rotation.y = t * 0.008;
         stars.rotation.x = t * 0.003;
@@ -344,8 +448,12 @@
         const positions = swarm.geometry.attributes.position.array;
 
         // Breathing scale - heart expands and contracts
-        const breathe = Math.sin(t * 1.2) * 0.35 + 1; // Scale 0.65 to 1.35 (bigger breath!)
-        const heartPulse = Math.sin(t * 2.5) * 0.05; // Faster subtle pulse
+        // When morphing to text, reduce breathing effect
+        const heartStrength = 1 - morphFactor;
+        const textStrength = morphFactor;
+
+        const breathe = (Math.sin(t * 1.2) * 0.35 + 1) * heartStrength + 1 * textStrength;
+        const heartPulse = (Math.sin(t * 2.5) * 0.05) * heartStrength;
 
         for (let i = 0; i < SWARM_COUNT; i++) {
             const i3 = i * 3;
@@ -353,23 +461,39 @@
             const py = positions[i3 + 1];
             const pz = positions[i3 + 2];
 
-            // Target position (heart shape with breathing)
-            const targetX = heartTargets[i3] * (breathe + heartPulse);
-            const targetY = heartTargets[i3 + 1] * (breathe + heartPulse);
-            const targetZ = heartTargets[i3 + 2];
+            // HEART TARGET
+            const hx = heartTargets[i3] * (breathe + heartPulse);
+            const hy = heartTargets[i3 + 1] * (breathe + heartPulse);
+            const hz = heartTargets[i3 + 2];
 
-            // 1. Attract toward heart shape
+            // TEXT TARGET
+            // Add subtle floating to text
+            const floatScale = 1 + Math.sin(t * 2 + i * 0.1) * 0.02;
+            const tx = textTargets[i3] * floatScale;
+            const ty = textTargets[i3 + 1] * floatScale;
+            const tz = textTargets[i3 + 2];
+
+            // BLENDED TARGET
+            const targetX = hx * (1 - morphFactor) + tx * morphFactor;
+            const targetY = hy * (1 - morphFactor) + ty * morphFactor;
+            const targetZ = hz * (1 - morphFactor) + tz * morphFactor;
+
+            // 1. Attract toward target
             const toTargetX = targetX - px;
             const toTargetY = targetY - py;
             const toTargetZ = targetZ - pz;
 
-            swarmVelocities[i3] += toTargetX * 0.008;
-            swarmVelocities[i3 + 1] += toTargetY * 0.008;
+            // Text needs tighter control, Heart can be looser
+            const attraction = 0.008 + (0.012 * morphFactor);
+
+            swarmVelocities[i3] += toTargetX * attraction;
+            swarmVelocities[i3 + 1] += toTargetY * attraction;
             swarmVelocities[i3 + 2] += toTargetZ * 0.005;
 
-            // 2. Subtle wave motion
-            const waveX = Math.sin(py * 0.3 + t * 0.8) * 0.001;
-            const waveY = Math.cos(px * 0.3 + t * 0.8) * 0.001;
+            // 2. Subtle wave motion (reduced for text to keep it readable)
+            const waveStrength = 0.001 * (1 - morphFactor * 0.5);
+            const waveX = Math.sin(py * 0.3 + t * 0.8) * waveStrength;
+            const waveY = Math.cos(px * 0.3 + t * 0.8) * waveStrength;
             swarmVelocities[i3] += waveX;
             swarmVelocities[i3 + 1] += waveY;
 
@@ -386,10 +510,11 @@
                 swarmVelocities[i3 + 2] -= (dz / dist) * force * 0.3;
             }
 
-            // 4. Damping
-            swarmVelocities[i3] *= 0.94;
-            swarmVelocities[i3 + 1] *= 0.94;
-            swarmVelocities[i3 + 2] *= 0.94;
+            // 4. Damping (Text needs higher damping for stability)
+            const damping = 0.94 * (1 - morphFactor) + 0.90 * morphFactor;
+            swarmVelocities[i3] *= damping;
+            swarmVelocities[i3 + 1] *= damping;
+            swarmVelocities[i3 + 2] *= damping;
 
             // Update positions
             positions[i3] += swarmVelocities[i3];
@@ -400,18 +525,26 @@
         swarm.geometry.attributes.position.needsUpdate = true;
 
         // Glass hearts float + parallax
+        // Fade out glass hearts when text is active
+        const glassOpacity = 1 - morphFactor;
+
         glassHearts.forEach(heart => {
-            heart.rotation.y += heart.userData.rotSpeed;
-            heart.position.y = heart.userData.baseY + Math.sin(t * heart.userData.floatSpeed + heart.userData.floatOffset) * 1.2;
-            heart.position.z = heart.userData.baseZ + Math.cos(t * heart.userData.floatSpeed * 0.7) * 0.4;
-            heart.position.x += (mouseX * 0.0008 - heart.position.x * 0.00005);
+            heart.visible = glassOpacity > 0.01;
+            if (heart.visible) {
+                heart.material.opacity = (heart.userData.isDeep ? 0.12 : 0.25) * glassOpacity;
+
+                heart.rotation.y += heart.userData.rotSpeed;
+                heart.position.y = heart.userData.baseY + Math.sin(t * heart.userData.floatSpeed + heart.userData.floatOffset) * 1.2;
+                heart.position.z = heart.userData.baseZ + Math.cos(t * heart.userData.floatSpeed * 0.7) * 0.4;
+                heart.position.x += (mouseX * 0.0008 - heart.position.x * 0.00005);
+            }
         });
 
         // Glow orbs pulse
         glowOrbs.forEach(orb => {
             const p = Math.sin(t * orb.userData.pulseSpeed + orb.userData.offset) * 0.35 + 0.65;
             orb.scale.setScalar(p * 1.5);
-            orb.material.opacity = 0.04 + p * 0.04;
+            orb.material.opacity = (0.04 + p * 0.04);
         });
 
         // Bubbles rise
@@ -518,26 +651,65 @@
     // ROMANTIC MESSAGES (20)
     // ========================================
     const messages = [
-        "The heart wants what it wants...",
-        "Destiny has other plans",
-        "Some things are simply meant to be",
-        "Even fate is rooting for us",
-        "That answer doesn't exist here",
-        "Your soul already knows the truth",
-        "The stars have already aligned",
-        "This was written in the cosmos",
-        "Love always finds its way",
-        "Perhaps reconsider, my dear?",
-        "The universe gently disagrees",
-        "Some buttons believe in romance",
-        "That option seems unavailable",
-        "Fate is rather persistent tonight",
-        "The answer lies within your heart",
-        "We were always inevitable",
-        "Consider this: forever together",
-        "The moon whispers 'yes'",
-        "Every love story needs a yes",
-        "This moment was destined"
+        "Are you clicking the wrong one?",
+        "That was a misclick, right?",
+        "Try the other button ->",
+        "The universe says NO to your No",
+        "I'm going to cry...",
+        "Heart.exe has stopped working",
+        "Error 404: Rejection not found",
+        "Don't be like this...",
+        "Have you no heart?",
+        "I'm telling your mom",
+        "Is this a joke?",
+        "Stop playing hard to get",
+        "You're breaking my code",
+        "I can do this all day",
+        "Still waiting for a Yes",
+        "My developer is crying now",
+        "Button is slippery, huh?",
+        "Nice try, but no",
+        "Access Denied",
+        "System Override: Say Yes",
+        "Look at those puppy eyes...",
+        "Just one click on Yes?",
+        "I'll buy you chocolate...",
+        "What if I say pretty please?",
+        "Unacceptable answer",
+        "Try again in 5.4.3...",
+        "Warning: Cuteness overload imminent",
+        "You have no choice 💜",
+        "Resistance is futile",
+        "Just say it already!",
+        "Okay, now you're just being mean",
+        "I'm running out of buttons",
+        "Fine, I'll just wait..."
+    ];
+
+    const poems = [
+        `"In a universe of infinite stars,<br>
+         I found my way to where you are.<br>
+         Through time and space, my heart knew true—<br>
+         Every path was leading me to you."`,
+
+        `"Whatever our souls are made of,<br>
+         his and mine are the same.<br>
+         You are the finest, loveliest,<br>
+         tenderest, and most beautiful person I have ever known."`,
+
+        `"I love you without knowing how,<br>
+         or when, or from where.<br>
+         I love you simply, without problems or pride:<br>
+         I love you in this way because I do not know any other way of loving."`,
+
+        `"Yours is the light by which my spirit's born:<br>
+         you are my sun, my moon, and all my stars."`,
+
+        `"If I had a flower for every time I thought of you...<br>
+         I could walk through my garden forever."`,
+
+        `"I seem to have loved you in numberless forms, numberless times…<br>
+         In life after life, in age after age, forever."`
     ];
 
     // ========================================
@@ -574,9 +746,14 @@
     // ========================================
     // "NO" BUTTON EVASION
     // ========================================
+    // ========================================
+    // CHAOTIC "NO" BUTTON EVASION
+    // ========================================
+    const noBtnTexts = ["No", "N0", "Nope", "Nah", "Can't", "Error", "Stop", "Wait", "Huh?", "Why?"];
+
     function evadeButton() {
         const rect = noBtn.getBoundingClientRect();
-        const pad = 60;
+        const pad = 80; // Increased padding
         const maxX = window.innerWidth - rect.width - pad;
         const maxY = window.innerHeight - rect.height - pad;
 
@@ -586,35 +763,62 @@
             newY = pad + Math.random() * (maxY - pad);
             attempts++;
         } while (attempts < 25 &&
-            Math.hypot(newX - rect.left, newY - rect.top) < 200);
+            Math.hypot(newX - rect.left, newY - rect.top) < 250); // Increased safe distance
 
         noBtn.classList.add('is-escaping');
+
+        // Glitch Effect
+        noBtn.classList.add('btn-glitch');
+        setTimeout(() => noBtn.classList.remove('btn-glitch'), 400);
+
+        // Speed ramps up with frustration (faster as count goes up)
+        const duration = Math.max(0.08, 0.4 - (noCount * 0.02));
 
         gsap.to(noBtn, {
             left: newX,
             top: newY,
-            duration: 0.18,
-            ease: 'back.out(2.5)'
+            rotation: (Math.random() - 0.5) * 90, // Random tilt
+            duration: duration,
+            ease: "back.out(2.5)"
         });
 
         noCount++;
 
-        // Scale adjustments
-        noScale = Math.max(noScale - 0.06, 0.4);
-        yesScale = Math.min(yesScale + 0.15, 2.2);
+        // Text Corruption
+        if (noCount % 3 === 0) {
+            noBtn.innerText = noBtnTexts[Math.min(Math.floor(noCount / 3), noBtnTexts.length - 1)];
+            noBtn.style.fontFamily = Math.random() > 0.5 ? "'Courier New', monospace" : "inherit";
+        }
 
-        gsap.to(noBtn, { scale: noScale, duration: 0.25 });
-        gsap.to(yesBtn, { scale: yesScale, duration: 0.25 });
+        // Scale adjustments
+        noScale = Math.max(noScale - 0.04, 0.5);
+        yesScale = Math.min(yesScale + 0.15, 2.5);
+
+        gsap.to(noBtn, { scale: noScale, duration: 0.2 });
+        gsap.to(yesBtn, { scale: yesScale, duration: 0.2 });
 
         // Message
-        messageBox.innerHTML = `<p>${messages[(noCount - 1) % messages.length]}</p>`;
+        const msgIndex = (noCount - 1) % messages.length;
+        messageBox.innerHTML = `<p class="msg-pop">${messages[msgIndex]}</p>`;
+
+        // Animate message pop
+        gsap.fromTo("#messageBox p", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "elastic.out(1, 0.5)" });
 
         // Counter
         if (noCount >= 5) {
             attemptCounter.classList.add('is-warning');
-            attemptCounter.textContent = `Attempt ${noCount} — Just say Yes! 💕`;
+            attemptCounter.textContent = `Attempt ${noCount} — Why are you like this? 😭`;
         } else {
             attemptCounter.textContent = `Attempt ${noCount}`;
+        }
+
+        // Spawn broken particles
+        createSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, true);
+
+        // Shake screen violently after 10 tries
+        if (noCount > 10) {
+            const shakeIntensity = Math.min(10, (noCount - 10) * 1.5);
+            gsap.to(questionPage, { x: `+=${shakeIntensity}`, y: `-=${shakeIntensity}`, yoyo: true, repeat: 5, duration: 0.05 });
         }
 
         // Screen shake every 5
@@ -689,6 +893,12 @@
                     onComplete: () => heart.remove()
                 });
             }, i * 40);
+        }
+
+        // Set Random Poem
+        const successPoem = document.getElementById('successPoem');
+        if (successPoem) {
+            successPoem.innerHTML = poems[Math.floor(Math.random() * poems.length)];
         }
 
         // Page transition
@@ -783,6 +993,94 @@
         setTimeout(() => {
             questionPage.classList.remove('page--hidden');
         }, 800);
+    });
+
+    // ========================================
+    // PERSONALIZATION UI HANDLERS
+    // ========================================
+    const personalizeBtn = document.getElementById('personalizeBtn');
+    const personalizeModal = document.getElementById('personalizeModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const nameInput = document.getElementById('nameInput');
+    const createLinkBtn = document.getElementById('createLinkBtn');
+    const shareResult = document.getElementById('shareResult');
+    const shareLinkInput = document.getElementById('shareLinkInput');
+    const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+    // Toggle Modal
+    personalizeBtn.addEventListener('click', () => {
+        personalizeModal.classList.remove('modal--hidden');
+        nameInput.focus();
+    });
+
+    function closeModal() {
+        personalizeModal.classList.add('modal--hidden');
+        // Reset state if needed, or leave it
+        setTimeout(() => {
+            shareResult.classList.add('is-hidden');
+            nameInput.value = '';
+        }, 500);
+    }
+
+    closeModalBtn.addEventListener('click', closeModal);
+    personalizeModal.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal-backdrop')) {
+            closeModal();
+        }
+    });
+
+    // Generate Logic
+    createLinkBtn.addEventListener('click', () => {
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        // 1. Update URL
+        const url = new URL(window.location.href);
+        url.searchParams.set('for', name);
+        window.history.pushState({}, '', url);
+
+        // 2. Generate Link
+        shareLinkInput.value = url.toString();
+        shareResult.classList.remove('is-hidden');
+
+        // 3. Trigger Particle Morph
+        createTextTargets(name);
+        isPersonalized = true;
+        startMorphLoop();
+
+        // Update Question text
+        // document.querySelector('.card-title').textContent = `${name}, My Dearest...`;
+    });
+
+    // Auto-load from URL
+    function checkUrlParams() {
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('for');
+
+        if (name) {
+            // Wait for fonts to load for better canvas text
+            document.fonts.ready.then(() => {
+                createTextTargets(name);
+                isPersonalized = true;
+                startMorphLoop();
+
+                // Update title
+                document.querySelector('.intro-title').textContent = `For ${name}...`;
+                document.querySelector('.card-title').textContent = `${name}, My Dearest...`;
+            });
+        }
+    }
+
+    checkUrlParams();
+
+    // Copy Logic
+    copyLinkBtn.addEventListener('click', () => {
+        shareLinkInput.select();
+        document.execCommand('copy');
+
+        const originalText = copyLinkBtn.innerText;
+        copyLinkBtn.innerText = 'Copied!';
+        setTimeout(() => copyLinkBtn.innerText = originalText, 2000);
     });
 
     console.log('%c✦ Crafted with love ✦', 'color: #ff6b9d; font-size: 16px; font-weight: bold;');

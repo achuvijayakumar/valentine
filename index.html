@@ -40,12 +40,8 @@
         </div>
     </div>
 
-    <!-- Background Music -->
     <audio id="bgMusic" loop>
-        <!-- Placeholder - User should replace this or it will be silent -->
-        <source
-            src="https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f792cb.mp3?filename=romantic-piano-124987.mp3"
-            type="audio/mpeg">
+        <source src="music.mp3" type="audio/mpeg">
     </audio>
 
     <!-- Question Page -->
@@ -82,7 +78,7 @@
             <p class="success-subtitle">This moment means everything to me</p>
 
             <blockquote class="poem-card">
-                <p>
+                <p id="successPoem">
                     "In a universe of infinite stars,<br>
                     I found my way to where you are.<br>
                     Through time and space, my heart knew true—<br>
@@ -101,6 +97,36 @@
             <p class="final-note">Together, always.</p>
         </article>
     </main>
+
+    <!-- Personalization Trigger -->
+    <button id="personalizeBtn" class="btn-personalize" aria-label="Create your own">
+        <span>✦ Create Your Own</span>
+    </button>
+
+    <!-- Personalization Modal -->
+    <div id="personalizeModal" class="modal modal--hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content glass-card">
+            <button class="modal-close" id="closeModalBtn">&times;</button>
+            <h2 class="modal-title">Write it in the Stars</h2>
+            <p class="modal-subtitle">Enter a name to customize this experience</p>
+
+            <div class="input-group">
+                <input type="text" id="nameInput" placeholder="Partner's Name (e.g. Sarah)" maxlength="12"
+                    autocomplete="off">
+                <button id="createLinkBtn" class="btn btn--primary">Generate Magic</button>
+            </div>
+
+            <div id="shareResult" class="share-result is-hidden">
+                <p>Your unique link is ready:</p>
+                <div class="link-box">
+                    <input type="text" id="shareLinkInput" readonly>
+                    <button id="copyLinkBtn">Copy</button>
+                </div>
+                <p class="share-tip">Share this link with your special someone ✨</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
