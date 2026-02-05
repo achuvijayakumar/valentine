@@ -753,7 +753,25 @@
 
     function evadeButton() {
         const rect = noBtn.getBoundingClientRect();
-        const pad = 80; // Increased padding
+
+        // 1. DISAPPEAR AFTER 10 ATTEMPTS
+        if (noCount >= 10) {
+            noBtn.style.opacity = '0';
+            noBtn.style.pointerEvents = 'none';
+            messageBox.innerHTML = `<p class="msg-pop">Okay, I get it. You win. Just say YES! ❤️</p>`;
+            attemptCounter.textContent = 'There is only one choice now...';
+
+            // Center the YES button dramatically
+            gsap.to(yesBtn, {
+                scale: 2.5,
+                duration: 0.8,
+                ease: "elastic.out(1, 0.5)",
+                boxShadow: "0 0 50px rgba(255, 42, 109, 0.6)"
+            });
+            return;
+        }
+
+        const pad = 100; // Increased padding
         const maxX = window.innerWidth - rect.width - pad;
         const maxY = window.innerHeight - rect.height - pad;
 
@@ -763,7 +781,7 @@
             newY = pad + Math.random() * (maxY - pad);
             attempts++;
         } while (attempts < 25 &&
-            Math.hypot(newX - rect.left, newY - rect.top) < 250); // Increased safe distance
+            Math.hypot(newX - rect.left, newY - rect.top) < 350); // Harder: Must move at least 350px away
 
         noBtn.classList.add('is-escaping');
 
@@ -771,15 +789,15 @@
         noBtn.classList.add('btn-glitch');
         setTimeout(() => noBtn.classList.remove('btn-glitch'), 400);
 
-        // Speed ramps up with frustration (faster as count goes up)
-        const duration = Math.max(0.08, 0.4 - (noCount * 0.02));
+        // EXTRA FAST SPEED
+        const duration = Math.max(0.05, 0.35 - (noCount * 0.03));
 
         gsap.to(noBtn, {
             left: newX,
             top: newY,
-            rotation: (Math.random() - 0.5) * 90, // Random tilt
+            rotation: (Math.random() - 0.5) * 120, // More wild rotation
             duration: duration,
-            ease: "back.out(2.5)"
+            ease: "back.out(3)" // Snappier movement
         });
 
         noCount++;
@@ -791,8 +809,8 @@
         }
 
         // Scale adjustments
-        noScale = Math.max(noScale - 0.04, 0.5);
-        yesScale = Math.min(yesScale + 0.15, 2.5);
+        noScale = Math.max(noScale - 0.08, 0.0); // Shrink faster
+        yesScale = Math.min(yesScale + 0.2, 3.0);
 
         gsap.to(noBtn, { scale: noScale, duration: 0.2 });
         gsap.to(yesBtn, { scale: yesScale, duration: 0.2 });
@@ -800,6 +818,11 @@
         // Message
         const msgIndex = (noCount - 1) % messages.length;
         messageBox.innerHTML = `<p class="msg-pop">${messages[msgIndex]}</p>`;
+
+        // Custom message logic
+        if (noCount === 10) {
+            messageBox.innerHTML = `<p class="msg-pop">Bye bye button... 👋</p>`;
+        }
 
         // Animate message pop
         gsap.fromTo("#messageBox p", { scale: 0.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "elastic.out(1, 0.5)" });
@@ -815,11 +838,9 @@
         // Spawn broken particles
         createSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, true);
 
-        // Shake screen violently after 10 tries
-        if (noCount > 10) {
-            const shakeIntensity = Math.min(10, (noCount - 10) * 1.5);
-            gsap.to(questionPage, { x: `+=${shakeIntensity}`, y: `-=${shakeIntensity}`, yoyo: true, repeat: 5, duration: 0.05 });
-        }
+        // Shake screen violently
+        const shakeIntensity = Math.min(15, noCount * 2);
+        gsap.to(questionPage, { x: `+=${shakeIntensity}`, y: `-=${shakeIntensity}`, yoyo: true, repeat: 5, duration: 0.04 });
 
         // Screen shake every 5
         if (noCount % 5 === 0) {
